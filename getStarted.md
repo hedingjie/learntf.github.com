@@ -1,5 +1,5 @@
 #TensorFlow入门
-这份指导教程将开始你的TensorFlow编程生涯。在开始阅读本教程之前，请先确保您[安装了TensorFlow](<a href=https://www.tensorflow.org/install/index>)。要弄明白这个教程，你需要具有以下知识储备：
+这份指导教程将开始你的TensorFlow编程生涯。在开始阅读本教程之前，请先确保您[安装了TensorFlow](https://www.tensorflow.org/install/index)。要弄明白这个教程，你需要具有以下知识储备：
 * Python编程基础
 * 了解数组的一些知识
 * 最好能了解一些关于机器学习的东西。然而，如果你没有一点基础的话，这仍然是一本你入门机器学习的好教材
