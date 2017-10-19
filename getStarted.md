@@ -24,6 +24,7 @@ import tensorflow as tf
 你可以认为TensorFlow核心程序包含以下两个独立的部分：
 1. 构建计算图
 2. 运行计算图
+
 计算图是由一系列的TensorFlow操作作为节点，所组成的一个图（graph）。接下来让我们构建一个简单的计算图。它的每一个节点都都由0个以上的张量作为输入，并且产生一个张量作为输出。节点中有一种常量（constant）类型节点。正如所有TensorFlow中的常量一样，它不接受任何输入，而是将它内部存储的值作为输出。我们可以创建两个浮点类型张量node1和node2，示例如下：
 ```python
 node1 = tf.constant(3.0, dtype=tf.float32)
