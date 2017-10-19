@@ -79,4 +79,8 @@ b = tf.placeholder(tf.float32)
 adder_node = a + b  # + provides a shortcut for tf.add(a, b)
 ```
 
+以上三行有点像一个我们用来定义两个输入参数（a和b）然后对它们进行运算的函数或者是lambda表达式
+
+The preceding three lines are a bit like a function or a lambda in which we define two input parameters (a and b) and then an operation on them. We can evaluate this graph with multiple inputs by using the feed_dict argument to the run method to feed concrete values to the placeholders:
+
 
