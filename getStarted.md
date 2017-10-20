@@ -41,7 +41,8 @@ print(node1, node2)
 最后那条print输出语句输出的结果如下:
 
 ```python
-Tensor("Const:0", shape=(), dtype=float32) Tensor("Const_1:0", shape=(), dtype=float32)
+Tensor("Const:0", shape=(), dtype=float32) 
+Tensor("Const_1:0", shape=(), dtype=float32)
 ```
 
 注意，输出的结果并不是你所想象的是3.0和4.0这样的数值。相反，当我们仔细观察时，发现其实输出的是产生分别3.0和4.0这样的数值的节点。为了直观地观察节点，我们必须在session中运行计算图。session中封装了TensorFlow运行环境的操作和状态。
@@ -144,5 +145,21 @@ print(sess.run(linear_model, {x: [1, 2, 3, 4]}))
 [ 0.          0.30000001  0.60000002  0.90000004]
 ```
 
+我们已经创建了一个模型，但是到目前为止我们并不知道它是否足够好。为了评估这个模型，我们需要一个预留变量```y```表示所期望的结果，同时，我们还需要编写一个损失函数（loss function）。
 
+损失函数是用来衡量当前模型与所提供的数据的差异大小。我们将使用标准的损失模型作为线性回归的模型，它是当前模型与所提供的数据的差的平方求和得到。```linear_model - y```得到了一个向量，它的每一个元素都对应着例子中的偏差。我们调用```tf.square```来平方话这些偏差。之后我们通过```tf.reduce_sum```将这些偏差的平方求和构成一个标量，它抽象地反映了所有样本的误差：
 
+```python
+y = tf.placeholder(tf.float32)
+squared_deltas = tf.square(linear_model - y)
+loss = tf.reduce_sum(squared_deltas)
+print(sess.run(loss, {x: [1, 2, 3, 4], y: [0, -1, -2, -3]}))
+```
+
+输出结果如下：
+
+```python
+23.66
+```
+
+我们
