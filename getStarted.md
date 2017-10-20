@@ -79,8 +79,70 @@ b = tf.placeholder(tf.float32)
 adder_node = a + b  # + provides a shortcut for tf.add(a, b)
 ```
 
-以上三行有点像一个我们用来定义两个输入参数（a和b）然后对它们进行运算的函数或者是lambda表达式
+以上三行有点像一个我们定义了一个函数或者lambda表达式，它接收两个参数（a和b），然后进行运算。在计算这个图的时候，我们可以在run函数中通过feed_dict参数来为预留节点赋值：
 
-The preceding three lines are a bit like a function or a lambda in which we define two input parameters (a and b) and then an operation on them. We can evaluate this graph with multiple inputs by using the feed_dict argument to the run method to feed concrete values to the placeholders:
+```python
+print(sess.run(adder_node, {a: 3, b: 4.5}))
+print(sess.run(adder_node, {a: [1, 3], b: [2, 4]}))
+```
+
+输出结果：
+
+```python
+7.5
+[ 3.  7.]
+```
+
+我们可以借助TensorBoard看到其计算图如下：
+
+![TensorBoard中的计算图](https://www.tensorflow.org/images/getting_started_adder.png)
+
+我们可以通过添加其他操作使得原有计算图更为复杂，如下所示：
+
+```python
+add_and_triple = adder_node * 3.
+print(sess.run(add_and_triple, {a: 3, b: 4.5}))
+```
+
+输出结果如下：
+
+```python
+22.5
+```
+
+而之前的计算图将变成下面的样子：
+
+![图3](https://www.tensorflow.org/images/getting_started_triple.png)
+
+在机器学习中，我们通常希望模型能够像上面的示例接受任意输入。为了使得模型便于训练，在相同输入的情况下，我们需要通过控制图来获得不同的输出。变量（Variables）允许我们向计算图中添加可训练的参数。而在初始化变量的时候，我们通常为变量设定一个类型并赋一个初值：
+
+```python
+W = tf.Variable([.3], dtype=tf.float32)
+b = tf.Variable([-.3], dtype=tf.float32)
+x = tf.placeholder(tf.float32)
+linear_model = W * x + b
+```
+
+常量在你调用tf.constant时便被初始化了，之后它们的值将不再发生改变。而变量则形成了鲜明的对比，在你调用tf.Variable时，变量并没有被初始化。为了初始化TensorFlow程序中的所有值，你必须明确地调用如下操作：
+
+```python
+init = tf.global_variables_initializer()
+sess.run(init)
+```
+
+很重要的一点是你要意识到，```init```是TensorFlow子图中初始化所有全局变量的句柄。直到我们调用```sess.run```之前，变量是不会被初始化的。
+
+因为```x```是一个预留节点，所以我们针对```x```的不同的值计算```linear_model```的值，如下所示：
+
+```python
+print(sess.run(linear_model, {x: [1, 2, 3, 4]}))
+```
+
+输出如下：
+
+```python
+[ 0.          0.30000001  0.60000002  0.90000004]
+```
+
 
 
