@@ -156,10 +156,94 @@ loss = tf.reduce_sum(squared_deltas)
 print(sess.run(loss, {x: [1, 2, 3, 4], y: [0, -1, -2, -3]}))
 ```
 
-输出结果如下：
+输出损失值如下：
 
 ```python
 23.66
 ```
 
-我们
+我们可以通过手动为```W```和```b```赋```-1```和```1```或者改进这个值。变量可以通过```tf.initialized```赋值，但是可以通过```tf.assign```这样的操作进行更改。例如```W=-1```和```b=1```使我们这个模型最佳的参数。我们可以按照```W```和```b```进行相应的更改：
+
+```python
+fixW = tf.assign(W, [-1.])
+fixb = tf.assign(b, [1.])
+sess.run([fixW, fixb])
+print(sess.run(loss, {x: [1, 2, 3, 4], y: [0, -1, -2, -3]}))
+```
+
+更改之后输出的损失值为0。
+
+```python
+0.0
+```
+
+```W```和```b```的“最佳”值是我们猜测得到的，但是机器学习的关键点是自动地找到正确的参数。我们将在下面的部分展示如何实现这个的。
+
+## tf.train API
+
+对于机器学习的详尽的讨论已经超出了本教程的范围。然而，TensorFlow提供了优化器，它可以通过逐渐改变每一个变量来使得损失函数最小化。最简单的损失函数是梯度下降函数。它根据相应变量损失的微分梯度来修改每一个变量的值。通常，手工计算导数繁琐且容易出错。所以，TensorFlow通过```tf.gradients```函数根据模型的描述自动进行求导。为了简单起见，优化器通常自动为你做了这些。示例如下：
+
+```python
+optimizer = tf.train.GradientDescentOptimizer(0.01)
+train = optimizer.minimize(loss)
+```
+
+```python
+sess.run(init) # reset values to incorrect defaults.
+for i in range(1000):
+  sess.run(train, {x: [1, 2, 3, 4], y: [0, -1, -2, -3]})
+
+print(sess.run([W, b]))
+```
+
+这将使得模型的最终参数如下：
+
+```python
+[array([-0.9999969], dtype=float32), array([ 0.99999082],
+ dtype=float32)]
+```
+
+现在，我们已经完成了一个真正的机器学习过程了！在这个简单的线性回归模型中，我们并没有太多地用到TensorFlow的核心代码，但是如果你需要向你的更为复杂的模型和方法中反馈数据就需要更多的代码。因此，TensorFlow针对一些常用的模式，结构以及功能提供了更高层次的抽象（封装）。我们接下来将要学习如何如何使用其中的一些抽象方法。
+
+### 完整的程序
+
+完整的线性回归训练模型如下所示：
+
+```python
+import tensorflow as tf
+
+# Model parameters
+W = tf.Variable([.3], dtype=tf.float32)
+b = tf.Variable([-.3], dtype=tf.float32)
+# Model input and output
+x = tf.placeholder(tf.float32)
+linear_model = W * x + b
+y = tf.placeholder(tf.float32)
+
+# loss
+loss = tf.reduce_sum(tf.square(linear_model - y)) # sum of the squares
+# optimizer
+optimizer = tf.train.GradientDescentOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+# training data
+x_train = [1, 2, 3, 4]
+y_train = [0, -1, -2, -3]
+# training loop
+init = tf.global_variables_initializer()
+sess = tf.Session()
+sess.run(init) # reset values to wrong
+for i in range(1000):
+  sess.run(train, {x: x_train, y: y_train})
+
+# evaluate training accuracy
+curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
+print("W: %s b: %s loss: %s"%(curr_W, curr_b, curr_loss))
+```
+
+运行后，它将产生如下输出：
+
+```python
+W: [-0.9999969] b: [ 0.99999082] loss: 5.69997e-11
+```
+
