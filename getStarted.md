@@ -247,3 +247,134 @@ print("W: %s b: %s loss: %s"%(curr_W, curr_b, curr_loss))
 W: [-0.9999969] b: [ 0.99999082] loss: 5.69997e-11
 ```
 
+注意这里面的损失值已经很小了（接近于0）。如果你亲自运行这个程序，你的损失值可能会和例子的结果不一样，因为模型是用伪随机数进行初始化的。
+
+这个更加复杂的程序依然可以在TensorBoard上展示出来。
+
+![图4](https://www.tensorflow.org/images/getting_started_final.png)
+
+### tf.estimator
+
+```tf.estimator```是高层次的TensorFlow库，它从以下方面简化机器学习的机制：
+* 训练循环过程
+* 求值循环过程
+* 管理数据集
+```tf.estimator```还提供了常用的模型。
+
+### 基本用法
+注意观察使用```tf.estimator```是如何使得线性回归程序变得更简单的。
+
+```python
+import tensorflow as tf
+# NumPy is often used to load, manipulate and preprocess data.
+import numpy as np
+
+# Declare list of features. We only have one numeric feature. There are many
+# other types of columns that are more complicated and useful.
+feature_columns = [tf.feature_column.numeric_column("x", shape=[1])]
+
+# An estimator is the front end to invoke training (fitting) and evaluation
+# (inference). There are many predefined types like linear regression,
+# linear classification, and many neural network classifiers and regressors.
+# The following code provides an estimator that does linear regression.
+estimator = tf.estimator.LinearRegressor(feature_columns=feature_columns)
+
+# TensorFlow provides many helper methods to read and set up data sets.
+# Here we use two data sets: one for training and one for evaluation
+# We have to tell the function how many batches
+# of data (num_epochs) we want and how big each batch should be.
+x_train = np.array([1., 2., 3., 4.])
+y_train = np.array([0., -1., -2., -3.])
+x_eval = np.array([2., 5., 8., 1.])
+y_eval = np.array([-1.01, -4.1, -7, 0.])
+input_fn = tf.estimator.inputs.numpy_input_fn(
+    {"x": x_train}, y_train, batch_size=4, num_epochs=None, shuffle=True)
+train_input_fn = tf.estimator.inputs.numpy_input_fn(
+    {"x": x_train}, y_train, batch_size=4, num_epochs=1000, shuffle=False)
+eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+    {"x": x_eval}, y_eval, batch_size=4, num_epochs=1000, shuffle=False)
+
+# We can invoke 1000 training steps by invoking the  method and passing the
+# training data set.
+estimator.train(input_fn=input_fn, steps=1000)
+
+# Here we evaluate how well our model did.
+train_metrics = estimator.evaluate(input_fn=train_input_fn)
+eval_metrics = estimator.evaluate(input_fn=eval_input_fn)
+print("train metrics: %r"% train_metrics)
+print("eval metrics: %r"% eval_metrics)
+
+```
+运行后，将产生如下结果：
+
+```python
+train metrics: {'loss': 1.2712867e-09, 'global_step': 1000}
+eval metrics: {'loss': 0.0025279333, 'global_step': 1000}
+```
+
+注意我们的eval数据有一个更高的损失，但是它仍然很靠近于0.那意味着我们的学习过程是正确的。
+
+### 定制一个模型
+
+```tf.estimator```并不限制你必须使用它预制的模型。假定我们想要构建一个不同于TensorFlow内置内置模型的定制模型。我们依然需要维持```tf.estimator```数据集，反馈以及训练等的高层次的抽象。为了阐明这个情况，我们将自己利用已有的低层次TensorFlow API知识展示如何实现与之前所用到的线性回归的模型相等价的模型。
+
+为了使用```tf.estimator```定义一个定制的模型，我们需要使用```tf.estimator.Estimator```。```tf.estimator.LinearRegressor```实际上是```tf.estimator.Estimator```的子类。我们简单地提供一个函数```model_fn```给```tf.estimator```来指明如何进行计算预测，训练以及损失而不是使用子类估计器。代码如下：
+
+```python
+import numpy as np
+import tensorflow as tf
+
+# Declare list of features, we only have one real-valued feature
+def model_fn(features, labels, mode):
+  # Build a linear model and predict values
+  W = tf.get_variable("W", [1], dtype=tf.float64)
+  b = tf.get_variable("b", [1], dtype=tf.float64)
+  y = W * features['x'] + b
+  # Loss sub-graph
+  loss = tf.reduce_sum(tf.square(y - labels))
+  # Training sub-graph
+  global_step = tf.train.get_global_step()
+  optimizer = tf.train.GradientDescentOptimizer(0.01)
+  train = tf.group(optimizer.minimize(loss),
+                   tf.assign_add(global_step, 1))
+  # EstimatorSpec connects subgraphs we built to the
+  # appropriate functionality.
+  return tf.estimator.EstimatorSpec(
+      mode=mode,
+      predictions=y,
+      loss=loss,
+      train_op=train)
+
+estimator = tf.estimator.Estimator(model_fn=model_fn)
+# define our data sets
+x_train = np.array([1., 2., 3., 4.])
+y_train = np.array([0., -1., -2., -3.])
+x_eval = np.array([2., 5., 8., 1.])
+y_eval = np.array([-1.01, -4.1, -7, 0.])
+input_fn = tf.estimator.inputs.numpy_input_fn(
+    {"x": x_train}, y_train, batch_size=4, num_epochs=None, shuffle=True)
+train_input_fn = tf.estimator.inputs.numpy_input_fn(
+    {"x": x_train}, y_train, batch_size=4, num_epochs=1000, shuffle=False)
+eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+    {"x": x_eval}, y_eval, batch_size=4, num_epochs=1000, shuffle=False)
+
+# train
+estimator.train(input_fn=input_fn, steps=1000)
+# Here we evaluate how well our model did.
+train_metrics = estimator.evaluate(input_fn=train_input_fn)
+eval_metrics = estimator.evaluate(input_fn=eval_input_fn)
+print("train metrics: %r"% train_metrics)
+print("eval metrics: %r"% eval_metrics)
+```
+
+运行后，产生如下结果：
+
+```python
+train metrics: {'loss': 1.227995e-11, 'global_step': 1000}
+eval metrics: {'loss': 0.01010036, 'global_step': 1000}
+```
+
+### 下一步
+现在，你已经对TensorFlow的基本知识有了一个大致的了解。我们也有多个教程让你来学习更多。如果你是机器学习的小白，请阅读MNIST新手入门，否则请看MNIST专家教程。
+
+
