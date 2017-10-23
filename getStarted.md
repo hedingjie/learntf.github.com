@@ -255,11 +255,11 @@ W: [-0.9999969] b: [ 0.99999082] loss: 5.69997e-11
 
 ### tf.estimator
 
-```tf.estimator```是高层次的TensorFlow库，它从以下方面简化机器学习的机制：
+tf.estimator是高层次的TensorFlow库，它从以下方面简化机器学习的机制：
 * 训练循环过程
 * 求值循环过程
 * 管理数据集
-```tf.estimator```还提供了常用的模型。
+tf.estimator还提供了常用的模型。
 
 ### 基本用法
 注意观察使用```tf.estimator```是如何使得线性回归程序变得更简单的。
